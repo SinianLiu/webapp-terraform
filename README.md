@@ -5,7 +5,7 @@ Project Structure:
 - Webapp(app artifact)
   - node.js app files
   - gcp-packer(Packer config files)
-- tf-gcp-infra(Terraform Config Files)
+- tf-gcp-infra(Terraform config Files)
 
 **Inside each folder, there is README.md file containing way more detailed configurations and steps.**
 
