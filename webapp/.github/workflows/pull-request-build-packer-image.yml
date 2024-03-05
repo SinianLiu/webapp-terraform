@@ -1,0 +1,90 @@
+name: Packer CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      # must add this:
+    types:
+      - closed
+
+jobs:
+  integration-test:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 123456
+          POSTGRES_DB: webapp
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Start database
+        run: |
+          PGPASSWORD=123456 psql -h localhost -U postgres -d webapp -c "select 1;"
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Integration Tests
+        run: npm run test
+
+  build-packer-image:
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    needs: integration-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.PACKER_SERVICE_ACCOUNT }}'
+
+      - name: zip the project
+        run: |
+          zip -r gcp-packer/temp/webapp.zip . -x "*github/workflows*" "*node_modules*" "*gcp-packer*"
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+
+      - name: 'Use gcloud CLI'
+        run: 'gcloud info'
+
+      # packer build
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@main
+        with:
+          version: 'latest'
+
+      - name: Initialize Packer
+        run: |
+          cd ./gcp-packer
+          packer init gcp.pkr.hcl
+
+      - name: Run packer validate
+        run: |
+          cd ./gcp-packer
+          packer validate gcp.pkr.hcl
+
+      - name: Build Packer Image
+        run: |
+          cd ./gcp-packer
+          echo "Building the image with Packer...";
+          packer build gcp.pkr.hcl
