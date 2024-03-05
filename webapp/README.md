@@ -1,11 +1,11 @@
-#webapp
+# webapp
 
 CSYE6225 - webapp
 Name: Sinian Liu
 NUID:002790887
 
 
-#Description
+# Description
 
 HealthZ Application to check the health of Database Server connection and manage users' registeration information. The entire Application has 4 API EndPoints secured with Basic Auth.
 
