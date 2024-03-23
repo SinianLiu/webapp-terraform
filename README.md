@@ -1,5 +1,5 @@
 # Network Structure & Cloud Computing Project
-This is an ongoing project which has been finished by 60%
+This is an ongoing project which has been finished by 60% \n
 **Inside each folder, there is README.md file containing way more detailed configurations and steps.**
 
 # Project Structure:
