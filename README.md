@@ -1,6 +1,5 @@
 # Network Structure & Cloud Computing Project
-This is an ongoing project which has been finished by 60% \n
-**Inside each folder, there is README.md file containing way more detailed configurations and steps.**
+Inside each folder, there is README.md file containing way more detailed configurations and steps.
 
 # Project Structure:
 * Webapp(app artifact)
@@ -8,10 +7,9 @@ This is an ongoing project which has been finished by 60% \n
   * node.js app files
   * gcp-packer(Packer config files)
 * tf-gcp-infra(Terraform config Files)
-
+* Serverless function
 
 # Topics Covered:
-* DevOps, GitOps, SRE
 * Linux, Shell Scripting
 * Version Control with Git
 * Computer Networking
@@ -26,13 +24,13 @@ This is an ongoing project which has been finished by 60% \n
 * Auto-scaling Applications
 * Event-driven Architecture
 * Serverless Computing
-* Securing cloud applications and infrastructure
+
 
 # Stages for Development Evolutions:
-1. 
-Setup local development environment and sign up for cloud & SaaS services the project needs to use
-* github organization repo
-* GCP
+
+1. Setup local development environment and sign up for cloud & SaaS services the project needs to use
+* github organization repo, forked personal repo
+* GCP account
 * Terraform usage 
 
 2. 
@@ -43,37 +41,47 @@ Build an node.js app with several APIs, choose ORM and database
 * Work on retails of RESTful APIs and basic authentication
 * Implement Continuous Integration (CI) with GitHub Actions Status Check workflow
 
-4. 
-Infrastructure as Code: 
+4. Infrastructure as Code: 
 * Install gcloud CLI
 * Enable GCP Service APIs
 * Setup networking resources such as Virtual Private Cloud (VPC), Internet Gateway, Route Table, and Routes using Terraform
 * Implement integration tests in GitHub Actions workflow
 
-5. 
-Build Custom Application Images using Packer
+5. Build Custom Application Images using Packer
 * Create systemd service file to /etc/systemd/system and configure it to start the service when instance is launched
 
-6.
-Auto-configure the webapp for the database server and setup autorun for our service 
+6. Auto-configure the webapp for the cloud database and setup autorun for our service 
 * Remove the local database server installation from the custom image.
 * Create CloudSQL Instance, CloudSQL Database, CloudSQL Database User and Password on GCP
 * Create startup script in GCE instance to connect the app with CloudSQL Instance
 
-7. DNS setup & logging & IAM roles:
-* Register Domain Name using Namecheap
-* Create a Public Zone & setup Nameservers for Cloud DNS
-* Configure domain on Namecheap to use custom name servers provided by Cloud DNS
-* Update Terraform to point the domain to the VM
+7. DNS setup & IAM roles:
+* Create a Public Zone with the domain name & setup Nameservers for Cloud DNS
+* Configure Namecheap to use custom name servers provided by Cloud DNS to use the Cloud DNS name servers
+* Configure records(CNAME,TXT,A, MX) needed and provided by Namecheap, on GCP
+* Update A record on Terraform to point the domain to the VM
 
-Application Logging & Metrics
+8.Application Logging & Metrics
 * Write Structured Logs of the webapp in JSON
-* install the Ops Agent in custom image and Create a config.yaml file to use application logs, now all log data should be available in Log Explorer on GCP
-* Create a Service Account, bind IAM Roles to it and attach the Service Account to VM
+* Install the Ops Agent in custom image and Create a config.yaml file to use application logs, now all log data should be available in Log Explorer on GCP
+* Create a Service Account, bind IAM Roles to it and attach the Service Account to VM(Logging Admin/ Monitoring Metric Writer)
 
+9. Cloud Functions
+* When a new user account is created, a message will be sent to the topic
+* The Cloud Function will be invoked by the pub/sub
+* An email will be sent to the user with a link they can click to verify their email address
 
+10. Load balancer and Auto-scaling
+* Create a regional compute instance template
+* Create a compute health check
+* Create a regional compute instance group manager with the template
+* Create a compute autoscaler
+* Create a external Application Load Balancers which only support HTTPS protocol by using SSL certificate
+* Update the DNS record to point the domain to load balancer IP address. Public IPs of the virtual machines won't be accessible
 
-
+11. Cloud Key Management Service
+* Create king ring and keys ann bind them to VM and CloudSQL
+* Update ci/cd workflow, create a new vm template with the new image using gcloud cli, update the auto-scaler with new template
 
 
 
