@@ -59,7 +59,8 @@ Inside each folder, there is README.md file containing way more detailed configu
 * Update A record on Terraform to point the domain to the VM
 
 Check domain and record mapping: 
-https://toolbox.googleapps.com/apps/dig/#A/
+[Google Apps Toolbox](https://toolbox.googleapps.com/apps/dig/#A/)
+[Namechimp][https://www.namecheap.com]
 
 7.Application Logging & Metrics
 * Write Structured Logs of the webapp in JSON
@@ -70,6 +71,7 @@ https://toolbox.googleapps.com/apps/dig/#A/
 * When a new user account is created, a message will be sent to the topic
 * The Cloud Function will be invoked by the pub/sub
 * An email will be sent to the user with a link they can click to verify their email address
+[Mailgun][https://www.mailgun.com]
 
 9. Load balancer and Auto-scaling
 * Create a regional compute instance template
