@@ -22,6 +22,10 @@ class User extends Model {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
       },
+      token: DataTypes.STRING,
+      token_creation_time: DataTypes.DATE,
+      token_expiration_time: DataTypes.DATE,
+      status: DataTypes.STRING,
     }, {
       sequelize,
       tableName: 'Users',

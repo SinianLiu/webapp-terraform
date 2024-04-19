@@ -19,13 +19,6 @@ jobs:
         ports:
           - 5432:5432
 
-    # env:
-    #   DB_USERNAME: postgres
-    #   DB_PASSWORD: 123456
-    #   DB_NAME: webapp
-    #   DB_HOST: localhost
-    #   DB_DIALECT: postgres
-
     steps:
       - name: Checkout
         uses: actions/checkout@v3

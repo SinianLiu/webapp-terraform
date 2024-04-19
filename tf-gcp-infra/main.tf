@@ -31,17 +31,19 @@ resource "google_compute_route" "default_route" {
 
 # Firewall rules Config
 # Allow traffic to port 8080
-resource "google_compute_firewall" "allow_traffic_to_webapp" {
-  name    = var.allow_traffic_name
-  network = google_compute_network.vpc_network.name
+# only allow traffic from the load balancer now
 
-  allow {
-    protocol = var.allow_traffic_protocol
-    ports    = var.allow_traffic_ports
-  }
+# resource "google_compute_firewall" "allow_traffic_to_webapp" {
+#   name    = var.allow_traffic_name
+#   network = google_compute_network.vpc_network.name
 
-  source_ranges = var.allow_traffic_source_ranges
-}
+#   allow {
+#     protocol = var.allow_traffic_protocol
+#     ports    = var.allow_traffic_ports
+#   }
+
+#   source_ranges = var.allow_traffic_source_ranges
+# }
 
 
 # Disallow traffic to SSH port
@@ -58,111 +60,101 @@ resource "google_compute_firewall" "disallow_traffic_to_ssh_port" {
 }
 
 
-resource "google_compute_global_address" "private_ip_address" {
 
-  name          = var.private_ip_address_name
-  purpose       = var.purpose
-  address_type  = var.address_type
-  prefix_length = var.prefix_length
-
-  network       = google_compute_network.vpc_network.id
-}
-
-resource "google_service_networking_connection" "private_vpc_connection" {
-
-  network                 = google_compute_network.vpc_network.id
-  service                 = var.service
-  reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
+# create service account
+resource "google_service_account" "sa" {
+  project      = var.project_id
+  account_id   = var.service_account_id
+  display_name = var.service_account_display_name
 }
 
 
+# Bind 2 roles to the service account
+resource "google_project_iam_binding" "logging_admin" {
+  for_each = toset(var.iam_roles)
 
-# CloudSQL Database Config
-resource "google_sql_database" "database" {
-  name     = var.database_name
-  instance = google_sql_database_instance.instance.name
-}
+  project = var.project_id
+  role    = each.value
 
-resource "google_sql_database_instance" "instance" {
-
-  name             = var.database_instance_name
-  region           = var.db_instance_region
-  database_version = var.database_version
-  deletion_protection  = var.deletion_protection
-
-  depends_on = [google_service_networking_connection.private_vpc_connection]
-  settings {
-    tier = var.tier
-
-    ip_configuration {
-      # not be accessible from the internet.
-      ipv4_enabled    = var.ipv4_enabled
-      # can only be accessed by the compute engine instance
-      private_network = google_compute_network.vpc_network.id
-      enable_private_path_for_google_cloud_services = var.enable_private_path
-    }
-
-    disk_autoresize = var.disk_autoresize
-    disk_type       = var.disk_type
-    disk_size       = var.disk_size
-
-    availability_type   = var.availability_type
-  }
-
+  members = [
+    "serviceAccount:${google_service_account.sa.email}",
+  ]
 }
 
 
-resource "random_password" "password" {
-  length           = var.password_length
-  special          = var.special
-  override_special = var.override_special
-}
+
+# resource "google_compute_instance" "vm_instance" {
+#   name         = var.vm_instance_name
+#   machine_type = var.vm_machine_type
+#   zone         = var.vm_zone
+#   tags         = var.allow_target_tags
+
+#   boot_disk {
+#     initialize_params {
+#       image = var.image
+#       type  = var.boot_disk_type
+#       size  = var.boot_disk_size
+#     }
+#   }
+
+#   network_interface {
+#     network = google_compute_network.vpc_network.name
+#     subnetwork = google_compute_subnetwork.webapp_subnet.self_link
+
+#     access_config {
+#       // setup public IP
+#       // Ephemeral IP
+#     }
+#   }
+
+# # attach service account to the vm
+#   service_account {
+#     email  = google_service_account.sa.email
+#     scopes = var.service_account_scopes
+#   }
 
 
-resource "google_sql_user" "users" {
-  name     = var.db_user_name
-  instance = google_sql_database_instance.instance.name
-  password = random_password.password.result
-}
+#   metadata = {
+#     startup-script = <<-EOT
+#     #!/bin/bash
+#     set -e
+
+#     sudo echo "DB_HOST=${google_sql_database_instance.instance.private_ip_address}" >> /opt/myapp/.env
+#     sudo echo "DB_PASSWORD=${random_password.password.result}" >> /opt/myapp/.env
+#     sudo echo "DB_USERNAME=${google_sql_user.users.name}" >> /opt/myapp/.env
+#     sudo echo "DB_NAME=${google_sql_database.database.name}" >> /opt/myapp/.env
+
+#     sudo systemctl restart webapp
+#     EOT
+#   }
+# }
 
 
-# vritual machine config
-resource "google_compute_instance" "vm_instance" {
-  name         = var.vm_instance_name
-  machine_type = var.vm_machine_type
-  zone         = var.vm_zone
-  tags         = var.allow_target_tags
 
-  boot_disk {
-    initialize_params {
-      image = var.image
-      type  = var.boot_disk_type
-      size  = var.boot_disk_size
-    }
-  }
+# Cloud DNS zone
+# resource "google_dns_record_set" "a_record" {
+#   name         = var.dns_name
+#   type         = var.dns_type
+#   ttl          = var.dns_ttl
+#   managed_zone = var.dns_managed_zone
+#   rrdatas = [google_compute_instance.vm_instance.network_interface[0].access_config[0].nat_ip]
 
-  network_interface {
-    network = google_compute_network.vpc_network.name
-    subnetwork = google_compute_subnetwork.webapp_subnet.self_link
-
-    access_config {
-      // setup public IP
-      // Ephemeral IP
-    }
-  }
+#   depends_on = [
+#     google_compute_instance.vm_instance
+#   ]
+# }
 
 
-  metadata = {
-    startup-script = <<-EOT
-    #!/bin/bash
-    set -e
 
-    sudo echo "DB_HOST=${google_sql_database_instance.instance.private_ip_address}" >> /opt/myapp/.env
-    sudo echo "DB_PASSWORD=${random_password.password.result}" >> /opt/myapp/.env
-    sudo echo "DB_USERNAME=${google_sql_user.users.name}" >> /opt/myapp/.env
-    sudo echo "DB_NAME=${google_sql_database.database.name}" >> /opt/myapp/.env
+# Update the DNS record to point the domain to load balancer IP address.
+resource "google_dns_record_set" "a_record" {
+  name         = var.dns_name
+  type         = "A"
+  ttl          = var.dns_ttl
+  managed_zone = var.dns_managed_zone
+  rrdatas      = [google_compute_global_forwarding_rule.default.ip_address]
 
-    sudo systemctl restart webapp
-    EOT
-  }
+  depends_on = [
+    google_compute_global_forwarding_rule.default
+  ]
 }

@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "name": "csye6225-app-custom-image",
+      "builder_type": "googlecompute",
+      "build_time": 1712888155,
+      "files": null,
+      "artifact_id": "csye6225-1712887859",
+      "packer_run_uuid": "ddfd1a08-f481-f602-02f1-02281fd8fa36",
+      "custom_data": null
+    }
+  ],
+  "last_run_uuid": "ddfd1a08-f481-f602-02f1-02281fd8fa36"
+}

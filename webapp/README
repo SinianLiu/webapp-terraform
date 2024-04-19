@@ -1,9 +1,9 @@
+
 # webapp
 
 CSYE6225 - webapp
 Name: Sinian Liu
 NUID:002790887
-
 
 # Description
 
@@ -90,11 +90,15 @@ sequelize.sync({ force: false })
 - Check the table
 
 ```
-psql -h 127.0.0.1 -U postgres -d webapp
+local: psql -h 127.0.0.1 -U postgres -d webapp
+cloud: psql -h 172.16.0.2 -U webapp -d webapp
+
 check all the tables: \dt
-\q
-check the specific table: \d "Users";
+
 SELECT * FROM "Users";
+SELECT * FROM “Users” WHERE username='liusinian2021@gmail.com';
+
+exit: \q
 ```
 
 - Everytime when the table defination changes, need to execute:
@@ -168,6 +172,10 @@ $ gcloud projects add-iam-policy-binding dev-project-415104 \
     --member=serviceAccount:packer@dev-project-415104.iam.gserviceaccount.com \
     --role=roles/iap.tunnelResourceAccessor
 
+- go to gcp platform IMA service account section:
+- go to packer service account, generate token
+- add the token to the org repo:
+https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions
 
 permission -> view access -> continue -> run query
 keys -> create json keys -> copy keys to github org repo settings
@@ -178,4 +186,27 @@ Now your github workflow could use packer to build a image in a GCP project,
 
 ```
 
-ConditionPathExists=/opt/myapp/app.properties
+#Logging and Metrics with ops_agent
+Inside config.yaml, link ops_agent to monitor /tmp/webapp.log file
+
+
+local: psql -h 127.0.0.1 -U postgres -d webapp
+cloud: psql -h 10.80.0.2 -U webapp -d webapp
+
+
+check all the tables: \dt
+
+SELECT _ FROM "Users";
+SELECT _ FROM "Users" WHERE username='liusinian2021@gmail.com';
+
+SELECT token, token_creation_time, token_expiration_time, status FROM "Users" WHERE username='liusinian2021@gmail.com';
+
+exit: \q
+
+
+DELETE FROM "Users" WHERE username = 'liusinian2021@gmail.com';
+
+
+```
+
+```

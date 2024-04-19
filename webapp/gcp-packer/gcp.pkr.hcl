@@ -117,12 +117,27 @@ build {
     destination = "/tmp/.env"
   }
 
+  provisioner "file" {
+    source      = "../config.yaml"
+    destination = "/tmp/config.yaml"
+  }
 
   provisioner "shell" {
     script = "unzip_webapp.sh"
   }
 
   provisioner "shell" {
+    script = "ops_agent_setup.sh"
+  }
+
+  provisioner "shell" {
     script = "service_start.sh"
   }
+
+  post-processor "manifest" {
+    output     = "manifest.json"
+    strip_path = true
+  }
+
+
 }

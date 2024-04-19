@@ -1,39 +1,48 @@
-// const request = require('supertest');
-// const app = require('../server');
-
-
 
 describe('dummy test', () => {
   it('should always pass', async () => {
     expect(true).toBe(true);
   });
-
 });
 
 
-// describe('integration test', () => {
 
-//   it('should create an account and validate it exists', async () => {
+// const request = require('supertest');
+// const app = require('../server');
+// const User = require('../models/user');
+// const sequelize = require('../sequelize');
+
+// describe('POST /user', function () {
+
+//   it('should create a new user and check if the user exists', async function () {
+//     const newUser = {
+//       first_name: 'test_user_first_name',
+//       last_name: 'test_user_last_name',
+//       username: 'testuser2024@gmail.com',
+//       password: '123456'
+//     };
 
 //     await request(app)
 //       .post('/v1/user')
-//       .send({
-//         first_name: 'lily',
-//         last_name: 'liu',
-//         password: '123456',
-//         username: 'ma@gmail.com',
-//       });
+//       .send(newUser)
+//       .set('Accept', 'application/json');
 
-//     let base64Credentials1 = Buffer.from('ma@gmail.com:123456').toString('base64');
-//     let authHeader1 = `Basic ${base64Credentials1}`;
+//     const credentials = Buffer.from(`${newUser.username}:${newUser.password}`).toString('base64');
 
-//     const getResponse = await request(app)
+//     await User.update({ status: 'Verified' }, {
+//       where: {
+//         username: newUser.username
+//       }
+//     });
+
+//     const response = await request(app)
 //       .get('/v1/user')
-//       .set('Authorization', authHeader1);
+//       .set('Accept', 'application/json')
+//       .set('Authorization', `Basic ${credentials}`);
 
-//     expect(getResponse.body.first_name).toEqual('lily');
-//     expect(getResponse.body.last_name).toEqual('liu');
-
+//     expect(response.body.username).toBe(newUser.username);
+//     // expect(response.body.data.first_name).toBe(newUser.first_name);
+//     // expect(response.body.data.last_name).toBe(newUser.last_name);
 //   }, 10000);
 
 
@@ -41,66 +50,4 @@ describe('dummy test', () => {
 //     await sequelize.close();
 //   });
 
-// });
-
-
-// describe('integration test 2', () => {
-
-//   beforeAll(async () => {
-//     server = app.listen();
-//   });
-//   it('should update the account and validate it was updated', async () => {
-//     await request(app)
-//       .post('/v1/user')
-//       .send({
-//         first_name: 'test_first_name',
-//         last_name: 'test_last_name',
-//         password: 'testpassword',
-//         username: '2014@gmail.com',
-//       });
-
-//     let base64Credentials = Buffer.from('2014@gmail.com:testpassword').toString('base64');
-//     let authHeader = `Basic ${base64Credentials}`;
-
-//     await request(app)
-//       .put('/v1/user')
-//       .set('Authorization', authHeader)
-//       .send({
-//         first_name: 'test_first_name_updated',
-//         last_name: 'test_last_name_updated',
-//       });
-
-//     const getResponse = await request(app)
-//       .get('/v1/user')
-//       .set('Authorization', authHeader);
-
-//     expect(getResponse.body.first_name).toBe('test_first_name_updated');
-//     expect(getResponse.body.last_name).toBe('test_last_name_updated');
-//   });
-
-//   afterAll((done) => {
-//     server.close(done); // Ensure server is closed before finishing
-//   });
-
-// });
-
-
-
-
-
-// 这样，sequelize 连接将在所有测试结束后关闭，这应该可以解决你的问题。
-
-// 然而，你的错误信息表明，问题可能是由于 sequelize.sync()
-// 方法中的 console.log 语句。这个方法是异步的，而且它在你的测试
-// 结束后仍然在运行。你可能需要将 sequelize.sync() 方法移到一个
-// 异步的初始化函数中，并在你的测试开始前等待这个函数完成。例如：
-
-//
-// async function initializeDatabase() {
-//   await sequelize.sync({ force: false });
-//   console.log(`Database & tables created!`);
-// }
-
-// beforeAll(async () => {
-//   await initializeDatabase();
 // });

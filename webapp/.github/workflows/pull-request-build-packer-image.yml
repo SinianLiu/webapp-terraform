@@ -87,4 +87,61 @@ jobs:
         run: |
           cd ./gcp-packer
           echo "Building the image with Packer...";
+
           packer build gcp.pkr.hcl
+
+          IMAGE_ID=$(gcloud compute images list --project dev-project-415104 --no-standard-images --sort-by="~creationTimestamp" --limit 1 | awk 'NR>1{print $1}')
+          echo "IMAGE_ID is: $IMAGE_ID"
+          echo "IMAGE_ID=$IMAGE_ID" >> $GITHUB_ENV
+
+          NEW_INSTANCE_TEMPLATE_NAME="vm-template-$(date +%s)"
+          echo $NEW_INSTANCE_TEMPLATE_NAME
+          echo "NEW_INSTANCE_TEMPLATE_NAME=$NEW_INSTANCE_TEMPLATE_NAME" >> $GITHUB_ENV
+
+      - name: Create Instance Template
+        run: |
+          INSTANCE_GROUP_NAME=csye6225-igm
+          TEMPLATE_URL=$(gcloud compute instance-groups managed describe ${INSTANCE_GROUP_NAME} --region=us-west1 --format="get(instanceTemplate)")
+          TEMPLATE_NAME=$(basename ${TEMPLATE_URL})
+
+          echo "template name: ${TEMPLATE_NAME}"
+
+          KMS_KEY=$(gcloud compute instance-templates describe ${TEMPLATE_NAME} --region=us-west1 --format="get(properties.disks[0].diskEncryptionKey.kmsKeyName)")
+          KMS_KEY=${KMS_KEY#KEY_ID=}
+          echo "kms key: ${KMS_KEY}"
+
+          startup_script="$(gcloud compute instance-templates describe ${TEMPLATE_NAME} --region=us-west1 --format=json | jq -r '.properties.metadata.items[] | select(.key == "startup-script").value')"
+          echo "startup script: ${startup_script}"
+
+          gcloud compute instance-templates create ${{ env.NEW_INSTANCE_TEMPLATE_NAME }} \
+            --region=us-west1 \
+            --tags=allow-lb \
+            --description="Instance for CSYE6225" \
+            --machine-type=e2-medium \
+            --image=${{ env.IMAGE_ID }} \
+            --boot-disk-kms-key=$KMS_KEY \
+            --instance-template-region=us-west1 \
+            --network=csye6225-vpc-demo \
+            --subnet=webapp \
+            --service-account=$(gcloud iam service-accounts list --format="value(email)" --filter="name:csye6225-service-account-new") \
+            --scopes=https://www.googleapis.com/auth/cloud-platform \
+            --metadata=startup-script="$startup_script"
+
+
+      - name: Set Instance Template
+        run: |
+          TEMPLATE_URL=$(gcloud compute instance-templates describe ${{ env.NEW_INSTANCE_TEMPLATE_NAME }} --region=us-west1 --format="get(selfLink)")
+          gcloud compute instance-groups managed set-instance-template csye6225-igm \
+            --template=$TEMPLATE_URL \
+            --region=us-west1
+
+      - name: Start Rolling Update
+        run: |
+          TEMPLATE_URL=$(gcloud compute instance-templates describe ${{ env.NEW_INSTANCE_TEMPLATE_NAME }} --region=us-west1 --format="get(selfLink)")
+          gcloud compute instance-groups managed rolling-action start-update csye6225-igm --version=template=$TEMPLATE_URL --region=us-west1
+
+      - name: Wait for Instance Group to Become Stable
+        run: |
+          gcloud compute instance-groups managed wait-until csye6225-igm \
+            --version-target-reached \
+            --region=us-west1
